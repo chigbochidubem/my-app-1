@@ -3,6 +3,8 @@ import { useAuth, useUser } from "@clerk/clerk-react";
 import { productsDummyData, userDummyData } from "../../assets/assets";
 import { useRouter } from "next/navigation";
 import { createContext, useContext, useEffect, useState } from "react";
+import toast from "react-hot-toast";
+import axios from "axios";
 
 export const AppContext = createContext();
 
@@ -12,7 +14,7 @@ export const useAppContext = () => {
 
 export const AppContextProvider = (props) => {
   const { user } = useUser();
-  const {getToken} = useAuth()
+  const { getToken } = useAuth();
   const currency = process.env.NEXT_PUBLIC_CURRENCY;
   const router = useRouter();
   const [products, setProducts] = useState([]);
@@ -25,7 +27,20 @@ export const AppContextProvider = (props) => {
   };
 
   const fetchUserData = async () => {
-    setUserData(userDummyData);
+    try {
+      const token = await getToken();
+      const { data } = await axios.get("../api/user/data", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (data.sucess) {
+        setUserData(data.user);
+        setCartItems(data.user.cartItems);
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error(data.message);
+    }
   };
 
   const addToCart = async (itemId) => {
